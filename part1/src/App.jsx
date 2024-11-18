@@ -1,49 +1,52 @@
 const Header = (props) => {
-  return (
-    <h1>{props.course}</h1>
-  )
-}
+  return <h1>{props.course.name}</h1>;
+};
 
 const Part = (props) => {
   return (
     <p>
       {props.part} {props.excercises}
     </p>
-  )
-}
+  );
+};
 
 const Content = (props) => {
+  let part = props.part.parts;
   return (
     <div>
-      <Part part={props.part[0]} excercises={props.excercises[0]} />
-      <Part part={props.part[1]} excercises={props.excercises[1]} />
-      <Part part={props.part[2]} excercises={props.excercises[2]} />
-    </div>
-  )
-}
-
-const Total = (props) => {
-  return (
-    <p>Number of excercises {props.total}</p>
-  )
-}
-
-const App = () => {
-  const course = "Half Stack application development";
-  const part1 = "Fundamentals of React";
-  const excercises1 = 10;
-  const part2 = "Using props to pass data";
-  const excercises2 = 7;
-  const part3 = "State of a component";
-  const excercises3 = 14;
-
-  return (
-    <div>
-      <Header course={course} />
-      <Content part={[part1, part2, part3]} excercises={[excercises1, excercises2, excercises3]} />
-      <Total total={excercises1 + excercises2 + excercises3} />
+      <Part part={part[0].name} excercises={part[0].excercises} />
+      <Part part={part[1].name} excercises={part[1].excercises} />
+      <Part part={part[2].name} excercises={part[2].excercises} />
     </div>
   );
 };
 
-export default App
+const Total = (props) => {
+  let total = props.total.parts;
+  return (
+    <p>
+      Number of excercises{" "}
+      {total[0].excercises + total[1].excercises + total[2].excercises}
+    </p>
+  );
+};
+
+const App = () => {
+  const course = {
+    name: "Half Stack application development",
+    parts: [
+      { name: "Fundamentals of React", excercises: 10 },
+      { name: "Using props to pass data", excercises: 7 },
+      { name: "State of a component", excercises: 14 },
+    ],
+  };
+  return (
+    <div>
+      <Header course={course} />
+      <Content part={course} />
+      <Total total={course} />
+    </div>
+  );
+};
+
+export default App;
