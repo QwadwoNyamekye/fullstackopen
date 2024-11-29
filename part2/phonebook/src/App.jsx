@@ -1,45 +1,7 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-
-const PersonForm = ({
-  newName,
-  handleSetPerson,
-  handleSetNewName,
-  newNumber,
-  handleSetNewNumber,
-}) => {
-  return (
-    <div>
-      <form onSubmit={handleSetPerson}>
-        <div>
-          name: <input value={newName} onChange={handleSetNewName} />
-        </div>
-        <div>
-          number: <input value={newNumber} onChange={handleSetNewNumber} />
-        </div>
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
-    </div>
-  );
-};
-
-const Persons = ({ persons }) => {
-  return (
-    <div>
-      <ul>
-        {persons.map((person) => {
-          return (
-            <li key={person.id}>
-              {person.name} {person.number}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-};
+import phonebookService from "./services/phonebook";
+import PersonForm from "./components/person";
+import Numbers from "./components/numbers";
 
 const Filter = ({ searchValue, handleSetSearchValue }) => {
   return (
@@ -56,24 +18,45 @@ const App = () => {
   const [newNumber, setNewNumber] = useState("");
   const [searchValue, setSearchValue] = useState("");
 
-  const setPersonsHook = () => {
-    axios.get("http://localhost:3001/persons").then((response) => {
-      setPersons(response.data);
+  useEffect(() => {
+    phonebookService.getAll().then((response) => {
+      setPersons(response);
     });
-  };
-
-  useEffect(setPersonsHook, []);
+  }, []);
 
   const handleSetPerson = (e) => {
     e.preventDefault();
-    persons.forEach((person) => {
-      if (person.name == newName) {
-        return alert(`${newName} is already added to phonebook`);
-      } else {
-        setPersons(persons.concat({ name: newName, number: newNumber }));
+    let foundPerson = persons.find((person) => person.name === newName);
+
+    if (foundPerson != undefined) {
+      let confirm = window.confirm(
+        `${foundPerson.name} is already added to phonebook, replace the old number with a new one?`
+      );
+      if (confirm) {
+        const oldPerson = persons.find((value) => value.id == foundPerson.id);
+        const updatedPerson = { ...oldPerson, number: newNumber };
+        phonebookService
+          .update(updatedPerson, foundPerson.id)
+          .then((returnedPerson) =>
+            setPersons(
+              persons.map((value) => {
+                return value.id === returnedPerson.id ? returnedPerson : value;
+              })
+            )
+          );
       }
-    });
+    } else {
+      let newPerson = {
+        name: newName,
+        number: newNumber,
+      };
+
+      phonebookService
+        .create(newPerson)
+        .then((response) => setPersons(persons.concat(response)));
+    }
     setNewName("");
+    setNewNumber("");
   };
 
   const handleSetNewName = (e) => {
@@ -91,7 +74,19 @@ const App = () => {
         persons.splice(i, 1);
       }
     }
-    console.log(persons);
+  };
+
+  const deletePerson = (person) => {
+    const confirm = window.confirm(`Delete ${person.name} ?`);
+    if (confirm) {
+      phonebookService.deletePerson(person.id).then((response) => {
+        setPersons(
+          persons.filter((value) => {
+            return value.id !== response.id;
+          })
+        );
+      });
+    }
   };
 
   return (
@@ -110,7 +105,7 @@ const App = () => {
         handleSetNewNumber={handleSetNewNumber}
       />
       <h2>Numbers</h2>
-      <Persons persons={persons} />
+      <Numbers persons={persons} deletePerson={deletePerson} />
     </div>
   );
 };
