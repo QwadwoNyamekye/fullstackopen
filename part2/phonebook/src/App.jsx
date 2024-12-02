@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import phonebookService from "./services/phonebook";
 import PersonForm from "./components/person";
 import Numbers from "./components/numbers";
+import Notification from "./components/notification";
 
 const Filter = ({ searchValue, handleSetSearchValue }) => {
   return (
@@ -17,6 +18,8 @@ const App = () => {
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [searchValue, setSearchValue] = useState("");
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [errorStatus, setErrorStatus] = useState(null);
 
   useEffect(() => {
     phonebookService.getAll().then((response) => {
@@ -43,7 +46,16 @@ const App = () => {
                 return value.id === returnedPerson.id ? returnedPerson : value;
               })
             )
-          );
+          )
+          .catch((error) => {
+            setErrorStatus("error");
+            setErrorMessage(
+              `Information of ${foundPerson.name} has already been removed from server`
+            );
+            setTimeout(() => {
+              setErrorMessage(null);
+            }, 5000);
+          });
       }
     } else {
       let newPerson = {
@@ -53,7 +65,16 @@ const App = () => {
 
       phonebookService
         .create(newPerson)
-        .then((response) => setPersons(persons.concat(response)));
+        .then((response) => {
+          setPersons(persons.concat(response));
+        })
+        .then(() => {
+          setErrorMessage(`Added ${newPerson.name}`);
+          setErrorStatus("success");
+          setTimeout(() => {
+            setErrorMessage(null);
+          }, 5000);
+        });
     }
     setNewName("");
     setNewNumber("");
@@ -79,19 +100,29 @@ const App = () => {
   const deletePerson = (person) => {
     const confirm = window.confirm(`Delete ${person.name} ?`);
     if (confirm) {
-      phonebookService.deletePerson(person.id).then((response) => {
-        setPersons(
-          persons.filter((value) => {
-            return value.id !== response.id;
-          })
-        );
-      });
+      phonebookService
+        .deletePerson(person.id)
+        .then((response) => {
+          setPersons(
+            persons.filter((value) => {
+              return value.id !== response.id;
+            })
+          );
+        })
+        .then(() => {
+          setErrorStatus("success");
+          setErrorMessage(`Deleted ${person.name}`);
+          setTimeout(() => {
+            setErrorMessage(null);
+          }, 5000);
+        });
     }
   };
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification errorMessage={errorMessage} status={errorStatus} />
       <Filter
         searchValue={searchValue}
         handleSetSearchValue={handleSetSearchValue}
